@@ -33,4 +33,4 @@ target_link_libraries(hello ${opencv_js})
 
 # Specify linker arguments
 # set_target_properties(hello PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 --preload-file assets --bind")
-set_target_properties(hello PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 --bind")
+set_target_properties(hello PROPERTIES LINK_FLAGS "-s ENVIRONMENT=web -s DEMANGLE_SUPPORT=1 --bind")

@@ -5,20 +5,21 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const path = require('path')
 const { version } = require('./package.json')
 
-const serverPublic = path.join(__dirname, 'server', 'public')
+const distFolder = path.join(__dirname, 'dist')
 
 module.exports = {
-  mode: 'production',
+  mode: 'development',
   entry: './src/index.js',
   output: {
-    path: serverPublic,
+    path: distFolder,
     filename: 'bundle.js',
   },
   plugins: [
     new CopyWebpackPlugin([
       { context: './src', from: '*.html' },
       { context: './src', from: '*.css' },
-      { context: './build', from: 'hello.js' }
+      { context: './build', from: 'hello.js' },
+      { context: './build', from: 'hello.wasm' }
     ]),
     new HtmlWebpackPlugin({
       template: './src/index.html',
@@ -28,6 +29,6 @@ module.exports = {
   ],
   devtool: 'source-map',
   devServer: {
-    contentBase: serverPublic
+    contentBase: distFolder
   }
 }

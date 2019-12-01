@@ -1,10 +1,12 @@
 {
   "name": "emscripten-opencv",
   "version": "1.0.0",
-  "description": "",
+  "description": "Basic example of using OpenCV from C++/WASM",
   "scripts": {
     "build:wasm": "./build-wasm.sh",
-    "build": "npm run build:wasm && webpack"
+    "build": "npm run build:wasm && webpack",
+    "start": "node server",
+    "start:dev": "npm run build:wasm && webpack-dev-server"
   },
   "dependencies": {
     "express": "^4.17.1"

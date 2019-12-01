@@ -1,12 +1,18 @@
-var Module = {
-  onRuntimeInitialized: () => init(Module)
-};
+window.Module = {
+  onRuntimeInitialized: () => {
+    console.log('[onRuntimeInitialized]')
+    init(Module)
+  }
+}
 
-function init(Module) {
-  const hello = new Module.Hello();
-  const view = hello.allocate(1000);
-  console.log("allocated");
+const init = Module => {
+  console.log('[init]')
+  const hello = new Module.Hello()
+  const view = hello.allocate(1000)
+  console.dir(view)
+  console.log("allocated")
   // TODO put in "view" actual image data
-  const mat = hello.imdecode();
-  console.log("decoded");
+  const mat = hello.imdecode()
+  console.dir(mat)
+  console.log("decoded")
 }
