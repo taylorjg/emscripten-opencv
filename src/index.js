@@ -5,7 +5,12 @@ window.Module = {
   }
 }
 
+const onProcessImage = () => {
+  console.log('[onProcessImage]')
+}
+
 const init = Module => {
+  document.getElementById('process-image-btn').addEventListener('click', onProcessImage)
   console.log('[init]')
   const hello = new Module.Hello()
   const view = hello.allocate(1000)

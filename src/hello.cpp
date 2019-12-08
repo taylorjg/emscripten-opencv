@@ -30,6 +30,7 @@ public:
   }
 };
 
+// https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html
 EMSCRIPTEN_BINDINGS(my_module) {
   class_<Mat>("Mat");
   class_<Hello>("Hello")
