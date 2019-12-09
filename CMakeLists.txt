@@ -32,5 +32,4 @@ file(GLOB opencv_js "${OPENCV_DIR}/build_wasm/lib/*.a")
 target_link_libraries(hello ${opencv_js})
 
 # Specify linker arguments
-# set_target_properties(hello PROPERTIES LINK_FLAGS "-s DEMANGLE_SUPPORT=1 --preload-file assets --bind")
-set_target_properties(hello PROPERTIES LINK_FLAGS "-s ENVIRONMENT=web -s DEMANGLE_SUPPORT=1 --bind")
+set_target_properties(hello PROPERTIES LINK_FLAGS "-s ENVIRONMENT=web -s EXTRA_EXPORTED_RUNTIME_METHODS=['ccall','UTF8ToString']")

@@ -7,17 +7,10 @@ window.Module = {
 
 const onProcessImage = () => {
   console.log('[onProcessImage]')
+  Module.ccall('fred', null, ['number', 'string'], [42, 'Hello'])
 }
 
 const init = Module => {
-  document.getElementById('process-image-btn').addEventListener('click', onProcessImage)
   console.log('[init]')
-  const hello = new Module.Hello()
-  const view = hello.allocate(1000)
-  console.dir(view)
-  console.log("allocated")
-  // TODO put in "view" actual image data
-  const mat = hello.imdecode()
-  console.dir(mat)
-  console.log("decoded")
+  document.getElementById('process-image-btn').addEventListener('click', onProcessImage)
 }

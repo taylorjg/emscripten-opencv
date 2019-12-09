@@ -1,40 +1,19 @@
-#include <emscripten/bind.h>
-#include <emscripten/val.h>
-
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
+#include <emscripten.h>
 
-#include <stdio.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-using namespace cv;
-using namespace emscripten;
-
-class Hello {
-private:
-  std::vector<unsigned char> buffer;
-  Mat decoded;
-
-public:
-  Hello() : buffer{}, decoded{} {};
-
-  val allocate(size_t size) {
-    this->buffer.reserve(size);
-    unsigned char *byteBuffer = this->buffer.data();
-    return val(typed_memory_view(size, byteBuffer));
-  }
-
-  Mat my_imdecode() {
-    // this->decoded = cv::imdecode(this->buffer, IMREAD_GRAYSCALE);
-    return this->decoded;
-  }
-};
-
-// https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html
-EMSCRIPTEN_BINDINGS(my_module) {
-  class_<Mat>("Mat");
-  class_<Hello>("Hello")
-      .constructor<>()
-      .function("imdecode", &Hello::my_imdecode)
-      .function("allocate", &Hello::allocate);
+EMSCRIPTEN_KEEPALIVE
+void fred(int n, const char *s) {
+  EM_ASM_({
+    console.log(`[fred] n: ${$0}; s: ${Module.UTF8ToString($1)}`)
+  }, n, s);
 }
+
+#ifdef __cplusplus
+}
+#endif
