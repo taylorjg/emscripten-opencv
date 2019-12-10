@@ -28,8 +28,14 @@ include_directories(${opencv_include_modules})
 add_executable(hello src/hello.cpp)
 
 # Link to opencv.js precompiled libraries
-file(GLOB opencv_js "${OPENCV_DIR}/build_wasm/lib/*.a")
-target_link_libraries(hello ${opencv_js})
+file(GLOB opencv_libs "${OPENCV_DIR}/build_wasm/lib/*.a")
+target_link_libraries(hello ${opencv_libs})
+
+# There is an issue regarding the order in which libraries
+# are passed to the compiler - pass libopencv_core.a last
+# https://answers.opencv.org/question/186124/undefined-reference-to-cvsoftdoubleoperator/
+file(GLOB opencv_lib_core "${OPENCV_DIR}/build_wasm/lib/libopencv_core.a")
+target_link_libraries(hello ${opencv_lib_core})
 
 # Specify linker arguments
 set_target_properties(hello PROPERTIES LINK_FLAGS "-s ENVIRONMENT=web -s EXTRA_EXPORTED_RUNTIME_METHODS=['cwrap']")

@@ -1,8 +1,11 @@
 #include <cstring>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <emscripten.h>
+
+using namespace cv;
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,13 +13,11 @@ extern "C" {
 
 EMSCRIPTEN_KEEPALIVE
 uchar *processImage(uchar *array, int width, int height) {
-  cv::Mat mat(height, width, CV_8UC4, array);
-  // EM_ASM_({
-  //   console.log(`[processImage] width: ${$0}; height: ${$1}; array[0]: ${$2}; array[1]: ${$3}; array[2]: ${$4}`)
-  // }, width, height, array[0], array[1], array[2]);
-  const int cb = width * height * 4;
+  Mat mat(height, width, CV_8UC4, array);
+  cvtColor(mat, mat, COLOR_RGBA2GRAY);
+  const int cb = width * height * mat.channels();
   uchar *array_copy = reinterpret_cast<uchar*>(malloc(cb));
-  std::memcpy(array_copy, array, cb);
+  std::memcpy(array_copy, mat.data, cb);
   return array_copy;
 }
 
