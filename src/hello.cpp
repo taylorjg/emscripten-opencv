@@ -8,10 +8,11 @@ extern "C" {
 #endif
 
 EMSCRIPTEN_KEEPALIVE
-void fred(int n, const char *s) {
+void processImage(uchar *array, int width, int height) {
+  cv::Mat mat(height, width, CV_8UC4, array);
   EM_ASM_({
-    console.log(`[fred] n: ${$0}; s: ${Module.UTF8ToString($1)}`)
-  }, n, s);
+    console.log(`[processImage] width: ${$0}; height: ${$1}; array[0]: ${$2}; array[1]: ${$3}; array[2]: ${$4}`)
+  }, width, height, array[0], array[1], array[2]);
 }
 
 #ifdef __cplusplus
