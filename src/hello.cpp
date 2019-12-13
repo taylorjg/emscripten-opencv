@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 EMSCRIPTEN_KEEPALIVE
-uchar *processImage(uchar *array, int width, int height) {
+int *processImage(uchar *array, int width, int height) {
 
   Mat mat(height, width, CV_8UC4, array);
 
@@ -38,10 +38,7 @@ uchar *processImage(uchar *array, int width, int height) {
   auto method = CHAIN_APPROX_SIMPLE;
   findContours(mat, contours, hierarchy, mode, method);
 
-  auto numContours = contours.size();
-  EM_ASM_(console.log(`numContours: ${$0}`), numContours);
-
-  auto areas = vector<double>(numContours);
+  auto areas = vector<double>(contours.size());
   transform(
     contours.cbegin(),
     contours.cend(),
@@ -49,14 +46,24 @@ uchar *processImage(uchar *array, int width, int height) {
     [](const vector<Point> &contour){ return contourArea(contour); });
 
   auto itMaxArea = max_element(areas.cbegin(), areas.cend());
-  auto idxMaxArea = distance(areas.cbegin(), itMaxArea);
-  auto r = boundingRect(contours[idxMaxArea]);
-  EM_ASM_(console.log(`boundingRect: ${$0} ${$1} ${$2} ${$3}`), r.x, r.y, r.width, r.height);
+  auto indexMaxArea = distance(areas.cbegin(), itMaxArea);
+  auto bb = boundingRect(contours[indexMaxArea]);
 
-  const int cb = width * height * mat.channels();
-  uchar *array_copy = reinterpret_cast<uchar*>(malloc(cb));
-  memcpy(array_copy, mat.data, cb);
-  return array_copy;
+  int channels = mat.channels();
+  const int cb_return_image = width * height * channels;
+  const int cb_return_data = 8 * sizeof(int) + cb_return_image;
+  int *return_data = reinterpret_cast<int*>(malloc(cb_return_data));
+  uchar *return_image = reinterpret_cast<uchar*>(&return_data[8]);
+  memcpy(return_image, mat.data, cb_return_image);
+  return_data[0] = bb.x;
+  return_data[1] = bb.y;
+  return_data[2] = bb.width;
+  return_data[3] = bb.height;
+  return_data[4] = width;
+  return_data[5] = height;
+  return_data[6] = channels;
+  return_data[7] = reinterpret_cast<int>(return_image);
+  return return_data;
 }
 
 #ifdef __cplusplus

@@ -51,12 +51,23 @@ const drawOutputImage = imageData => {
 const onProcessImage = (module, processImage) => () => {
   console.log('[onProcessImage]')
   const { data, width, height } = getImageData()
-  const dataOutAddr = processImage(data, width, height)
-  const dataOutSize = width * height * 1
-  const dataOut = module.HEAPU8.slice(dataOutAddr, dataOutAddr + dataOutSize)
-  const imageData = imageDataFrom1Channel(dataOut, width, height)
-  drawOutputImage(imageData)
-  module._free(dataOutAddr)
+  const addr = processImage(data, width, height)
+  const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
+  returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 8)
+  const [bbx, bby, bbw, bbh, outImageWidth, outImageHeight, outImageChannels, outImageAddr] = returnData
+  console.log(JSON.stringify([bbx, bby, bbw, bbh]))
+  console.log(JSON.stringify([outImageWidth, outImageHeight, outImageChannels, outImageAddr]))
+  const outImageDataSize = outImageWidth * outImageHeight * outImageChannels
+  const outImageData = module.HEAPU8.slice(outImageAddr, outImageAddr + outImageDataSize)
+  if (outImageChannels === 1) {
+    const imageData = imageDataFrom1Channel(outImageData, outImageWidth, outImageHeight)
+    drawOutputImage(imageData)
+  }
+  if (outImageChannels === 4) {
+    const imageData = imageDataFrom4Channels(outImageData, outImageWidth, outImageHeight)
+    drawOutputImage(imageData)
+  }
+  module._free(addr)
 }
 
 const wrapProcessImage = module => {

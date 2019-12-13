@@ -1,6 +1,6 @@
 {
   "name": "emscripten-opencv",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Web app calling into C++ WebAssembly code that uses OpenCV",
   "scripts": {
     "build:wasm": "./build-wasm.sh",
