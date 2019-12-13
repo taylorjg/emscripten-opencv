@@ -23,10 +23,12 @@ const imageDataFrom1Channel = (data, width, height) => {
   const array = new Uint8ClampedArray(cb)
   data.forEach((pixelValue, index) => {
     const base = index * 4
-    array[base] = pixelValue // R
-    array[base + 1] = pixelValue // G
-    array[base + 2] = pixelValue // B
-    array[base + 3] = 255 // A
+    const r = g = b = pixelValue
+    const a = 255
+    array[base] = r
+    array[base + 1] = g
+    array[base + 2] = b
+    array[base + 3] = a
   })
   const imageData = new ImageData(array, width, height)
   return imageData
@@ -48,6 +50,15 @@ const drawOutputImage = imageData => {
   ctx.putImageData(imageData, 0, 0)
 }
 
+const drawBoundingBox = (x, y, w, h) => {
+  console.log('[drawBoundingBox]')
+  const canvas = document.getElementById('input-image-overlay')
+  ctx = canvas.getContext('2d')
+  ctx.strokeStyle = 'red'
+  ctx.lineWidth = 2
+  ctx.strokeRect(x, y, w, h)
+}
+
 const onProcessImage = (module, processImage) => () => {
   console.log('[onProcessImage]')
   const { data, width, height } = getImageData()
@@ -67,6 +78,7 @@ const onProcessImage = (module, processImage) => () => {
     const imageData = imageDataFrom4Channels(outImageData, outImageWidth, outImageHeight)
     drawOutputImage(imageData)
   }
+  drawBoundingBox(bbx, bby, bbw, bbh)
   module._free(addr)
 }
 
@@ -84,4 +96,8 @@ const init = module => {
   const processImage = wrapProcessImage(module)
   const processImageBtn = document.getElementById('process-image-btn')
   processImageBtn.addEventListener('click', onProcessImage(module, processImage))
+  const inputImage = document.getElementById('input-image')
+  const inputImageOverlay = document.getElementById('input-image-overlay')
+  inputImageOverlay.width = inputImage.width
+  inputImageOverlay.height = inputImage.height
 }
