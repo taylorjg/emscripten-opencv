@@ -1,0 +1,17 @@
+.container {
+  margin-top: 20px;
+}
+
+.row-gap {
+  margin-top: 5px;
+}
+
+#input-image-wrapper {
+  position: relative;
+}
+
+#input-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
