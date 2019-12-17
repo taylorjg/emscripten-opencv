@@ -1,56 +1,107 @@
-# emscripten-opencv
+# Description
 
-Or how to use opencv as a dependency in WebAssembly (wasm) code.
-This repository is an attempt at doing very basic image tasks like:
+> I meant to fork https://github.com/mpizenberg/emscripten-opencv.git but I cloned it instead and I don't know how to correct it.
 
-- Decoding an image into a Mat.
-- Doing some matrix processing.
-- Exposing matrix data back to JavaScript.
+I have another repo ([sudoku-buster](https://github.com/taylorjg/sudoku-buster)) that uses OpenCV.js
+to detect the bounding box of a Sudoku puzzle given an image from a newspaper or similar. It then
+goes on to solve the puzzle and show the solution.
 
-## Setup
+It works pretty well but the OpenCV.js file is very big. I have managed to get it down to about 4 MB from 8 MB by
+exlcuding some bits that I am not using. However, it occurred to me that if I could move the bounding box code
+from JavaScript to C++ and then build it as a WebAssembly, the overall result might be smaller.
 
-You need to have [emscripten][emscripten] installed and accessible (source the shell scripts).
-You also need [OpenCV][opencv] source code to be able to compile its wasm version.
-Adapt the `CMakeLists.txt` to the location of your OpenCV directory.
+> **UPDATE:** This isn't the final version of the code but results so far are encouraging - my
+current C++ WebAssembly is about 1 MB in size.
 
-[emscripten]: https://emscripten.org/index.html
-[opencv]: https://opencv.org/
+# Setup
 
-## Activate Emscripten in the shell
+## Directory Structure
 
-You can add some code to your shell config file.
-Personally I just run the following (fish shell) when I need it.
+These instructions assume the following directory structure:
 
 ```
-source ~/programs/emsdk/emsdk_env.fish
+some-root
+├── emscripten-opencv
+└── opencv
 ```
 
-## Build OpenCV.js
+The name `some-root` could be anything.
+The key point is that the `opencv` and `emscripten-opencv` directories are at the same level.
 
-OpenCV.js is the name of the Emscripten build of OpenCV.
-In our case, we are building it for WebAssembly (wasm).
-
-```
-python ./platforms/js/build_js.py build_wasm --build_wasm
-```
-
-> PS: You can modify the `build_js.py` file to enable/disable modules.
-
-## Building this example with Emscripten
+Clone `opencv` from https://github.com/opencv/opencv.git.
+You may want to checkout to a particular tag e.g.
 
 ```
-mkdir build
-cd build
-emconfigure cmake ..
-emmake make
+cd some-root/opencv
+git checkout 4.1.2
 ```
 
-## Running the example in the browser
+## Ensure Docker is installed
 
-After building the example, just deploy a static http server at the root of this repository.
+I use the `trzeci/emscripten` Docker image to build WebAssemblies.
+
+## Build the OpenCV WebAssembly
+
+You only need to do this once.
+This builds the OpenCV WebAssembly libraries which you will find in:
+
+* `some-root/opencv/build_wasm/lib`
 
 ```
-python -m http.server 8080
+cd some-root/emscripten-opencv
+npm run build:opencv
 ```
 
-Then open your localhost page, and look at the dev tools console.
+## Build this project's WebAssembly
+
+Run this whenever a change is made to this project's C++ source files.
+This will build:
+
+* `some-root/emscripten-opencv/build/hello.js`
+* `some-root/emscripten-opencv/build/hello.wasm`
+
+```
+cd some-root/emscripten-opencv
+npm run build:wasm
+```
+
+# Running
+
+This assumes that you have already cloned and built OpenCV as described above.
+
+## Running a local server
+
+This builds this repo's WebAssembly and bundles everything using `webpack` and then launches
+an Express-based web server:
+
+```
+cd some-root/emscripten-opencv
+npm run build
+npm start
+```
+
+To run on a specific port e.g. 3434:
+
+```
+PORT=3434 npm start
+```
+
+## Running a local server in dev mode
+
+This builds this repo's WebAssembly then launches `webpack-dev-server`:
+
+```
+cd some-root/emscripten-opencv
+npm run start:dev
+```
+
+This will automatically rebundle when a change is made to files of type .js, .html, .css etc.
+
+If you change a C++ source file, you will have to explicitly re-run `npm run build:wasm`.
+The resulting WebAssembly should then be automatically rebundled.
+
+# Links
+
+* https://github.com/mpizenberg/emscripten-opencv.git
+* https://docs.opencv.org/4.1.2/d4/da1/tutorial_js_setup.html
+* https://hub.docker.com/r/trzeci/emscripten/
