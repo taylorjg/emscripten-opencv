@@ -20,7 +20,9 @@ module.exports = {
       { context: './src', from: '*.css' },
       { context: './src', from: '*.png' },
       { context: './build', from: 'hello.js' },
-      { context: './build', from: 'hello.wasm' }
+      { context: './build', from: 'hello.wasm' },
+      { context: './test', from: 'tests.html' },
+      { context: './test', from: 'tests.js' }
     ]),
     new HtmlWebpackPlugin({
       template: './src/index.html',

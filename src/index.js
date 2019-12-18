@@ -1,7 +1,7 @@
 window.Module = {
   onRuntimeInitialized: () => {
     console.log('[onRuntimeInitialized]')
-    init(Module)
+    init(Module) // eslint-disable-line no-undef
   }
 }
 
@@ -11,7 +11,7 @@ const getImageData = () => {
   const canvas = document.createElement('canvas')
   canvas.width = img.width
   canvas.height = img.height
-  ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d')
   ctx.drawImage(img, 0, 0, img.width, img.height)
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   return imageData
@@ -23,12 +23,10 @@ const imageDataFrom1Channel = (data, width, height) => {
   const array = new Uint8ClampedArray(cb)
   data.forEach((pixelValue, index) => {
     const base = index * 4
-    const r = g = b = pixelValue
-    const a = 255
-    array[base] = r
-    array[base + 1] = g
-    array[base + 2] = b
-    array[base + 3] = a
+    array[base] = pixelValue
+    array[base + 1] = pixelValue
+    array[base + 2] = pixelValue
+    array[base + 3] = 255
   })
   const imageData = new ImageData(array, width, height)
   return imageData
@@ -46,14 +44,14 @@ const drawOutputImage = imageData => {
   const canvas = document.getElementById('output-image')
   canvas.width = imageData.width
   canvas.height = imageData.height
-  ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d')
   ctx.putImageData(imageData, 0, 0)
 }
 
 const drawBoundingBox = (x, y, w, h) => {
   console.log('[drawBoundingBox]')
   const canvas = document.getElementById('input-image-overlay')
-  ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d')
   ctx.strokeStyle = 'red'
   ctx.lineWidth = 2
   ctx.strokeRect(x, y, w, h)
@@ -64,7 +62,7 @@ const onProcessImage = (module, processImage) => () => {
   const { data, width, height } = getImageData()
   const addr = processImage(data, width, height)
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
-  returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 8)
+  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 8)
   const [bbx, bby, bbw, bbh, outImageWidth, outImageHeight, outImageChannels, outImageAddr] = returnData
   console.log(JSON.stringify([bbx, bby, bbw, bbh]))
   console.log(JSON.stringify([outImageWidth, outImageHeight, outImageChannels, outImageAddr]))

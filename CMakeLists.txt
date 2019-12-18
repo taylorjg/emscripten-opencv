@@ -38,4 +38,4 @@ file(GLOB opencv_lib_core "${OPENCV_DIR}/build_wasm/lib/libopencv_core.a")
 target_link_libraries(hello ${opencv_lib_core})
 
 # Specify linker arguments
-set_target_properties(hello PROPERTIES LINK_FLAGS "-s ENVIRONMENT=web -s EXTRA_EXPORTED_RUNTIME_METHODS=['cwrap']")
+set_target_properties(hello PROPERTIES LINK_FLAGS "-s EXTRA_EXPORTED_RUNTIME_METHODS=['cwrap']")
