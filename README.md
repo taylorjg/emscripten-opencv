@@ -7,7 +7,7 @@ to detect the bounding box of a Sudoku puzzle given an image from a newspaper or
 goes on to solve the puzzle and show the solution.
 
 It works pretty well but the OpenCV.js file is very big. I have managed to get it down to about 4 MB from 8 MB by
-exlcuding some bits that I am not using. However, it occurred to me that if I could move the bounding box code
+excluding some bits that I am not using. However, it occurred to me that if I could move the bounding box code
 from JavaScript to C++ and then build it as a WebAssembly, the overall result might be smaller.
 
 > **UPDATE:** This isn't the final version of the code but results so far are encouraging - my
@@ -67,7 +67,7 @@ npm run build:wasm
 
 # Running
 
-This assumes that you have already cloned and built OpenCV as described above.
+The following sections assume that you have already cloned and built OpenCV as described above.
 
 ## Running a local server
 
@@ -99,6 +99,28 @@ This will automatically rebundle when a change is made to files of type .js, .ht
 
 If you change a C++ source file, you will have to explicitly re-run `npm run build:wasm`.
 The resulting WebAssembly should then be automatically rebundled.
+
+# Unit Tests
+
+I have added a single unit test so far. This can be run from the command line or a web browser
+(inspired by chapter 13 of [WebAssembly in Action](https://www.manning.com/books/webassembly-in-action)).
+
+The following sections assume that you have already cloned and built OpenCV as described above.
+
+## Running unit tests from the command line
+
+```
+npm run build
+npm test
+```
+
+## Running unit tests from a web browser
+
+```
+npm run build
+PORT=3434 npm start
+open http://localhost:3434/tests.html
+```
 
 # Links
 
