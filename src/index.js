@@ -5,6 +5,12 @@ window.Module = {
   }
 }
 
+const range = n =>
+  Array.from(Array(n).keys())
+
+export const inset = (x, y, w, h, dx, dy) =>
+  [x + dx, y + dy, w - 2 * dx, h - 2 * dy]
+
 const getImageData = () => {
   console.log('[getImageData]')
   const img = document.getElementById('input-image')
@@ -48,13 +54,46 @@ const drawOutputImage = imageData => {
   ctx.putImageData(imageData, 0, 0)
 }
 
-const drawBoundingBox = (x, y, w, h) => {
+const drawBoundingBox = boundingBox => {
   console.log('[drawBoundingBox]')
   const canvas = document.getElementById('input-image-overlay')
   const ctx = canvas.getContext('2d')
   ctx.strokeStyle = 'red'
   ctx.lineWidth = 2
-  ctx.strokeRect(x, y, w, h)
+  ctx.strokeRect(...inset(...boundingBox, 2, 2))
+}
+
+const cropCells = (imageData, boundingBox) => {
+  console.log('[cropCells]')
+
+  const img = document.getElementById('input-image')
+  const canvas = document.createElement('canvas')
+  canvas.width = img.width
+  canvas.height = img.height
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, 0, 0, img.width, img.height)
+
+  const cellsElement = document.getElementById('cells')
+
+  const [bbx, bby, bbw, bbh] = inset(...boundingBox, 2, 2)
+  const cellw = bbw / 9
+  const cellh = bbh / 9
+  for (const y of range(9)) {
+    const row = document.createElement('div')
+    const celly = bby + y * cellh
+    for (const x of range(9)) {
+      const cellx = bbx + x * cellw
+      const imageData = ctx.getImageData(...inset(cellx, celly, cellw, cellh, 2, 2))
+      console.dir(imageData)
+      const cellCanvas = document.createElement('canvas')
+      cellCanvas.setAttribute('class', 'cell')
+      cellCanvas.width = imageData.width
+      cellCanvas.height = imageData.height
+      cellCanvas.getContext('2d').putImageData(imageData, 0, 0)
+      row.appendChild(cellCanvas)
+    }
+    cellsElement.appendChild(row)
+  }
 }
 
 const onProcessImage = (module, processImage) => () => {
@@ -64,19 +103,17 @@ const onProcessImage = (module, processImage) => () => {
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
   const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 8)
   const [bbx, bby, bbw, bbh, outImageWidth, outImageHeight, outImageChannels, outImageAddr] = returnData
-  console.log(JSON.stringify([bbx, bby, bbw, bbh]))
+  const boundingBox = [bbx, bby, bbw, bbh]
+  console.log(JSON.stringify(boundingBox))
   console.log(JSON.stringify([outImageWidth, outImageHeight, outImageChannels, outImageAddr]))
   const outImageDataSize = outImageWidth * outImageHeight * outImageChannels
   const outImageData = module.HEAPU8.slice(outImageAddr, outImageAddr + outImageDataSize)
-  if (outImageChannels === 1) {
-    const imageData = imageDataFrom1Channel(outImageData, outImageWidth, outImageHeight)
-    drawOutputImage(imageData)
-  }
-  if (outImageChannels === 4) {
-    const imageData = imageDataFrom4Channels(outImageData, outImageWidth, outImageHeight)
-    drawOutputImage(imageData)
-  }
-  drawBoundingBox(bbx, bby, bbw, bbh)
+  const imageData = outImageChannels === 1
+    ? imageDataFrom1Channel(outImageData, outImageWidth, outImageHeight)
+    : imageDataFrom4Channels(outImageData, outImageWidth, outImageHeight)
+  drawOutputImage(imageData)
+  drawBoundingBox(boundingBox)
+  cropCells(imageData, boundingBox)
   module._free(addr)
 }
 
