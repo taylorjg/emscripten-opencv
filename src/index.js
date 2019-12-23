@@ -84,7 +84,6 @@ const cropCells = (imageData, boundingBox) => {
     for (const x of range(9)) {
       const cellx = bbx + x * cellw
       const imageData = ctx.getImageData(...inset(cellx, celly, cellw, cellh, 2, 2))
-      console.dir(imageData)
       const cellCanvas = document.createElement('canvas')
       cellCanvas.setAttribute('class', 'cell')
       cellCanvas.width = imageData.width
@@ -93,6 +92,23 @@ const cropCells = (imageData, boundingBox) => {
       row.appendChild(cellCanvas)
     }
     cellsElement.appendChild(row)
+  }
+}
+
+const onChangeSudoku = e => {
+  console.log('[onChangeSudoku]')
+  const inputImage = document.getElementById('input-image')
+  inputImage.src = e.target.selectedOptions[0].value
+  inputImage.alt = e.target.selectedOptions[0].label
+  const inputImageOverlay = document.getElementById('input-image-overlay')
+  inputImageOverlay.width = inputImage.width
+  inputImageOverlay.height = inputImage.height
+  const canvas = document.getElementById('output-image')
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const cellsElement = document.getElementById('cells')
+  while (cellsElement.firstChild) {
+    cellsElement.removeChild(cellsElement.firstChild)
   }
 }
 
@@ -128,6 +144,17 @@ const wrapProcessImage = module => {
 
 const init = module => {
   console.log('[init]')
+  const inputImagesElement = document.getElementById('input-images')
+  range(2).forEach(index => {
+    const sudokuNumber = index + 1
+    const value = `/images/sudoku-${sudokuNumber}.png`
+    const label = `Sudoku ${sudokuNumber}`
+    const optionElement = document.createElement('option')
+    optionElement.setAttribute('value', value)
+    optionElement.innerText = label
+    inputImagesElement.appendChild(optionElement)
+  })
+  inputImagesElement.addEventListener('change', onChangeSudoku)
   const processImage = wrapProcessImage(module)
   const processImageBtn = document.getElementById('process-image-btn')
   processImageBtn.addEventListener('click', onProcessImage(module, processImage))

@@ -20,7 +20,7 @@ if (IS_NODE) {
 
 const getImageDataNode = async () => {
   const fs = require('fs').promises
-  const png = await fs.readFile('src/sudoku-puzzle.png')
+  const png = await fs.readFile('src/images/sudoku-1.png')
   return new Promise(resolve => {
     const img = new npmcanvas.Image()
     img.onload = () => {
@@ -46,7 +46,7 @@ const getImageDataBrowser = async () =>
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       resolve(imageData)
     }
-    img.src = '/sudoku-puzzle.png'
+    img.src = '/images/sudoku-1.png'
   })
 
 const getImageData = () =>

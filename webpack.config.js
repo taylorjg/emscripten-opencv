@@ -18,7 +18,7 @@ module.exports = {
     new CopyWebpackPlugin([
       { context: './src', from: '*.html' },
       { context: './src', from: '*.css' },
-      { context: './src', from: '*.png' },
+      { context: './src', from: 'images/*.png' },
       { context: './build', from: 'hello.js' },
       { context: './build', from: 'hello.wasm' },
       { context: './test', from: 'tests.html' },
