@@ -95,14 +95,7 @@ const cropCells = (imageData, boundingBox) => {
   }
 }
 
-const onChangeSudoku = e => {
-  console.log('[onChangeSudoku]')
-  const inputImage = document.getElementById('input-image')
-  inputImage.src = e.target.selectedOptions[0].value
-  inputImage.alt = e.target.selectedOptions[0].label
-  const inputImageOverlay = document.getElementById('input-image-overlay')
-  inputImageOverlay.width = inputImage.width
-  inputImageOverlay.height = inputImage.height
+const reset = () => {
   const canvas = document.getElementById('output-image')
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -112,8 +105,20 @@ const onChangeSudoku = e => {
   }
 }
 
+const onChangeSudoku = e => {
+  console.log('[onChangeSudoku]')
+  const inputImage = document.getElementById('input-image')
+  inputImage.src = e.target.selectedOptions[0].value
+  inputImage.alt = e.target.selectedOptions[0].label
+  const inputImageOverlay = document.getElementById('input-image-overlay')
+  inputImageOverlay.width = inputImage.width
+  inputImageOverlay.height = inputImage.height
+  reset()
+}
+
 const onProcessImage = (module, processImage) => () => {
   console.log('[onProcessImage]')
+  reset()
   const { data, width, height } = getImageData()
   const addr = processImage(data, width, height)
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
