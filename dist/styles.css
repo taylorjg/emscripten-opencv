@@ -11,11 +11,11 @@
   margin-top: 5px;
 }
 
-#input-image-wrapper {
+.image-wrapper {
   position: relative;
 }
 
-#input-image-overlay {
+.image-overlay {
   position: absolute;
   top: 0;
   left: 0;

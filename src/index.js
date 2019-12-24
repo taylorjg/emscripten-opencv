@@ -13,12 +13,8 @@ export const inset = (x, y, w, h, dx, dy) =>
 
 const getImageData = () => {
   console.log('[getImageData]')
-  const img = document.getElementById('input-image')
-  const canvas = document.createElement('canvas')
-  canvas.width = img.width
-  canvas.height = img.height
+  const canvas = document.getElementById('input-image')
   const ctx = canvas.getContext('2d')
-  ctx.drawImage(img, 0, 0, img.width, img.height)
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   return imageData
 }
@@ -52,26 +48,37 @@ const drawOutputImage = imageData => {
   canvas.height = imageData.height
   const ctx = canvas.getContext('2d')
   ctx.putImageData(imageData, 0, 0)
+  const outputImageOverlay = document.getElementById('output-image-overlay')
+  outputImageOverlay.width = imageData.width
+  outputImageOverlay.height = imageData.height
 }
 
 const drawBoundingBox = (boundingBox, canvasId) => {
-  console.log('[drawBoundingBoxHelper]')
+  console.log('[drawBoundingBox]')
   const canvas = document.getElementById(canvasId)
   const ctx = canvas.getContext('2d')
   ctx.strokeStyle = 'red'
-  ctx.lineWidth = 2
+  ctx.lineWidth = 1
   ctx.strokeRect(...inset(...boundingBox, 2, 2))
+}
+
+const drawCorners = (corners, canvasId) => {
+  console.log('[drawCorners]')
+  const canvas = document.getElementById(canvasId)
+  const ctx = canvas.getContext('2d')
+  ctx.strokeStyle = 'magenta'
+  ctx.lineWidth = 1
+  const path = new Path2D()
+  path.moveTo(corners[0].x, corners[0].y)
+  corners.slice(1).forEach(corner => {
+    path.lineTo(corner.x, corner.y)
+  })
+  path.closePath()
+  ctx.stroke(path)
 }
 
 const cropCells = (imageData, boundingBox) => {
   console.log('[cropCells]')
-
-  // const img = document.getElementById('input-image')
-  // const canvas = document.createElement('canvas')
-  // canvas.width = img.width
-  // canvas.height = img.height
-  // const ctx = canvas.getContext('2d')
-  // ctx.drawImage(img, 0, 0, img.width, img.height)
 
   const canvas = document.getElementById('output-image')
   const ctx = canvas.getContext('2d')
@@ -98,25 +105,44 @@ const cropCells = (imageData, boundingBox) => {
   }
 }
 
-const reset = () => {
-  const canvas = document.getElementById('output-image')
+const clearCanvas = canvasId => {
+  const canvas = document.getElementById(canvasId)
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, canvas.width, canvas.height)
+}
+
+const reset = () => {
+  clearCanvas('output-image')
+  clearCanvas('output-image-overlay')
   const cellsElement = document.getElementById('cells')
   while (cellsElement.firstChild) {
     cellsElement.removeChild(cellsElement.firstChild)
   }
 }
 
+const loadInputImage = async index => {
+  console.log('[loadInputImage]')
+  const inputImagesElement = document.getElementById('input-images')
+  const imageUrl = inputImagesElement.options[index].value
+  const image = new Image()
+  await new Promise(resolve => {
+    image.onload = resolve
+    image.src = imageUrl
+  })
+  const canvas = document.getElementById('input-image')
+  canvas.width = image.width
+  canvas.height = image.height
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(image, 0, 0, image.width, image.height)
+  const inputImageOverlay = document.getElementById('input-image-overlay')
+  inputImageOverlay.width = image.width
+  inputImageOverlay.height = image.height
+  reset()
+}
+
 const onChangeSudoku = e => {
   console.log('[onChangeSudoku]')
-  const inputImage = document.getElementById('input-image')
-  inputImage.src = e.target.selectedOptions[0].value
-  inputImage.alt = e.target.selectedOptions[0].label
-  const inputImageOverlay = document.getElementById('input-image-overlay')
-  inputImageOverlay.width = inputImage.width
-  inputImageOverlay.height = inputImage.height
-  reset()
+  loadInputImage(e.target.selectedIndex)
 }
 
 const onProcessImage = (module, processImage) => () => {
@@ -125,7 +151,7 @@ const onProcessImage = (module, processImage) => () => {
   const { data, width, height } = getImageData()
   const addr = processImage(data, width, height)
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
-  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 12)
+  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 20)
   const [
     bbx, bby, bbw, bbh,
     outImage1Width, outImage1Height, outImage1Channels, outImage1Addr,
@@ -135,6 +161,11 @@ const onProcessImage = (module, processImage) => () => {
   console.log(JSON.stringify(boundingBox))
   console.log(JSON.stringify([outImage1Width, outImage1Height, outImage1Channels, outImage1Addr]))
   console.log(JSON.stringify([outImage2Width, outImage2Height, outImage2Channels, outImage2Addr]))
+  const corners = range(4).map(cornerIndex => ({
+    x: returnData[12 + cornerIndex * 2],
+    y: returnData[12 + cornerIndex * 2 + 1]
+  }))
+  console.dir(corners)
   const outImage1DataSize = outImage1Width * outImage1Height * outImage1Channels
   const outImage1Data = module.HEAPU8.slice(outImage1Addr, outImage1Addr + outImage1DataSize)
   const imageData1 = outImage1Channels === 1
@@ -146,7 +177,8 @@ const onProcessImage = (module, processImage) => () => {
   //   ? imageDataFrom1Channel(outImage2Data, outImage2Width, outImage2Height)
   //   : imageDataFrom4Channels(outImage2Data, outImage2Width, outImage2Height)
   drawOutputImage(imageData1)
-  drawBoundingBox(boundingBox, 'output-image')
+  drawBoundingBox(boundingBox, 'output-image-overlay')
+  drawCorners(corners, 'output-image-overlay')
   cropCells(imageData1, boundingBox)
   module._free(addr)
 }
@@ -173,11 +205,8 @@ const init = module => {
     inputImagesElement.appendChild(optionElement)
   })
   inputImagesElement.addEventListener('change', onChangeSudoku)
+  loadInputImage(0)
   const processImage = wrapProcessImage(module)
   const processImageBtn = document.getElementById('process-image-btn')
   processImageBtn.addEventListener('click', onProcessImage(module, processImage))
-  const inputImage = document.getElementById('input-image')
-  const inputImageOverlay = document.getElementById('input-image-overlay')
-  inputImageOverlay.width = inputImage.width
-  inputImageOverlay.height = inputImage.height
 }
