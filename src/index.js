@@ -54,9 +54,9 @@ const drawOutputImage = imageData => {
   ctx.putImageData(imageData, 0, 0)
 }
 
-const drawBoundingBox = boundingBox => {
-  console.log('[drawBoundingBox]')
-  const canvas = document.getElementById('input-image-overlay')
+const drawBoundingBox = (boundingBox, canvasId) => {
+  console.log('[drawBoundingBoxHelper]')
+  const canvas = document.getElementById(canvasId)
   const ctx = canvas.getContext('2d')
   ctx.strokeStyle = 'red'
   ctx.lineWidth = 2
@@ -66,12 +66,15 @@ const drawBoundingBox = boundingBox => {
 const cropCells = (imageData, boundingBox) => {
   console.log('[cropCells]')
 
-  const img = document.getElementById('input-image')
-  const canvas = document.createElement('canvas')
-  canvas.width = img.width
-  canvas.height = img.height
+  // const img = document.getElementById('input-image')
+  // const canvas = document.createElement('canvas')
+  // canvas.width = img.width
+  // canvas.height = img.height
+  // const ctx = canvas.getContext('2d')
+  // ctx.drawImage(img, 0, 0, img.width, img.height)
+
+  const canvas = document.getElementById('output-image')
   const ctx = canvas.getContext('2d')
-  ctx.drawImage(img, 0, 0, img.width, img.height)
 
   const cellsElement = document.getElementById('cells')
 
@@ -122,19 +125,29 @@ const onProcessImage = (module, processImage) => () => {
   const { data, width, height } = getImageData()
   const addr = processImage(data, width, height)
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
-  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 8)
-  const [bbx, bby, bbw, bbh, outImageWidth, outImageHeight, outImageChannels, outImageAddr] = returnData
+  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 12)
+  const [
+    bbx, bby, bbw, bbh,
+    outImage1Width, outImage1Height, outImage1Channels, outImage1Addr,
+    outImage2Width, outImage2Height, outImage2Channels, outImage2Addr
+  ] = returnData
   const boundingBox = [bbx, bby, bbw, bbh]
   console.log(JSON.stringify(boundingBox))
-  console.log(JSON.stringify([outImageWidth, outImageHeight, outImageChannels, outImageAddr]))
-  const outImageDataSize = outImageWidth * outImageHeight * outImageChannels
-  const outImageData = module.HEAPU8.slice(outImageAddr, outImageAddr + outImageDataSize)
-  const imageData = outImageChannels === 1
-    ? imageDataFrom1Channel(outImageData, outImageWidth, outImageHeight)
-    : imageDataFrom4Channels(outImageData, outImageWidth, outImageHeight)
-  drawOutputImage(imageData)
-  drawBoundingBox(boundingBox)
-  cropCells(imageData, boundingBox)
+  console.log(JSON.stringify([outImage1Width, outImage1Height, outImage1Channels, outImage1Addr]))
+  console.log(JSON.stringify([outImage2Width, outImage2Height, outImage2Channels, outImage2Addr]))
+  const outImage1DataSize = outImage1Width * outImage1Height * outImage1Channels
+  const outImage1Data = module.HEAPU8.slice(outImage1Addr, outImage1Addr + outImage1DataSize)
+  const imageData1 = outImage1Channels === 1
+    ? imageDataFrom1Channel(outImage1Data, outImage1Width, outImage1Height)
+    : imageDataFrom4Channels(outImage1Data, outImage1Width, outImage1Height)
+  // const outImage2DataSize = outImage2Width * outImage2Height * outImage2Channels
+  // const outImage2Data = module.HEAPU8.slice(outImage2Addr, outImage2Addr + outImage2DataSize)
+  // const imageData2 = outImage2Channels === 1
+  //   ? imageDataFrom1Channel(outImage2Data, outImage2Width, outImage2Height)
+  //   : imageDataFrom4Channels(outImage2Data, outImage2Width, outImage2Height)
+  drawOutputImage(imageData1)
+  drawBoundingBox(boundingBox, 'output-image')
+  cropCells(imageData1, boundingBox)
   module._free(addr)
 }
 
