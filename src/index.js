@@ -111,7 +111,8 @@ const clearCanvas = canvasId => {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 }
 
-const deleteChildren = parent => {
+const deleteChildren = elementId => {
+  const parent = document.getElementById(elementId)
   while (parent.firstChild) {
     parent.removeChild(parent.firstChild)
   }
@@ -120,10 +121,10 @@ const deleteChildren = parent => {
 const reset = () => {
   clearCanvas('output-image-1')
   clearCanvas('output-image-1-overlay')
-  const cells1Element = document.getElementById('cells-1')
-  const cells2Element = document.getElementById('cells-2')
-  deleteChildren(cells1Element)
-  deleteChildren(cells2Element)
+  clearCanvas('output-image-2')
+  clearCanvas('output-image-2-overlay')
+  deleteChildren('cells-1')
+  deleteChildren('cells-2')
 }
 
 const loadInputImage = async index => {
@@ -163,7 +164,7 @@ const onProcessImage = (module, processImage) => () => {
     outImage1Width, outImage1Height, outImage1Channels, outImage1Addr,
     outImage2Width, outImage2Height, outImage2Channels, outImage2Addr
   ] = returnData
-  const boundingBox = [bbx, bby, bbw, bbh]
+  const boundingBox1 = [bbx, bby, bbw, bbh]
   const corners = range(4).map(cornerIndex => ({
     x: returnData[12 + cornerIndex * 2],
     y: returnData[12 + cornerIndex * 2 + 1]
@@ -175,7 +176,7 @@ const onProcessImage = (module, processImage) => () => {
     ? imageDataFrom1Channel(outImage1Data, outImage1Width, outImage1Height)
     : imageDataFrom4Channels(outImage1Data, outImage1Width, outImage1Height)
   drawOutputImage(imageData1, 'output-image-1')
-  drawBoundingBox(boundingBox, 'output-image-1-overlay')
+  drawBoundingBox(boundingBox1, 'output-image-1-overlay')
   drawCorners(corners, 'output-image-1-overlay')
 
   const outImage2DataSize = outImage2Width * outImage2Height * outImage2Channels
@@ -184,11 +185,10 @@ const onProcessImage = (module, processImage) => () => {
     ? imageDataFrom1Channel(outImage2Data, outImage2Width, outImage2Height)
     : imageDataFrom4Channels(outImage2Data, outImage2Width, outImage2Height)
   drawOutputImage(imageData2, 'output-image-2')
-  drawBoundingBox(boundingBox, 'output-image-2-overlay')
-  drawCorners(corners, 'output-image-2-overlay')
+  const boundingBox2 = [0, 0, imageData2.width, imageData2.height]
 
-  cropCells('output-image-1', 'cells-1', boundingBox)
-  cropCells('output-image-2', 'cells-2', boundingBox)
+  cropCells('output-image-1', 'cells-1', boundingBox1)
+  cropCells('output-image-2', 'cells-2', boundingBox2)
 
   module._free(addr)
 }

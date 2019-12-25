@@ -49,6 +49,26 @@ vector<Point> findCorners(const vector<Point> &contour) {
   return corners;
 }
 
+void applyWarpPerspective(const Mat &matIn, Mat &matOut, const vector<Point> &corners) {
+  auto widthTop = distance(corners[0], corners[1]);
+  auto widthBottom = distance(corners[2], corners[3]);
+  auto heightLeft = distance(corners[0], corners[3]);
+  auto heightRight = distance(corners[1], corners[2]);
+  auto unwarpedSize = Size(max(widthTop, widthBottom), max(heightLeft, heightRight));
+  auto unwarpedCorners = vector<Point2f>(4);
+  unwarpedCorners[0] = Point2f(0, 0);
+  unwarpedCorners[1] = Point2f(unwarpedSize.width, 0);
+  unwarpedCorners[2] = Point2f(unwarpedSize.width, unwarpedSize.height);
+  unwarpedCorners[3] = Point2f(0, unwarpedSize.height);
+  auto warpedCorners = vector<Point2f>(4);
+  warpedCorners[0] = Point2f(corners[0].x, corners[0].y);
+  warpedCorners[1] = Point2f(corners[1].x, corners[1].y);
+  warpedCorners[2] = Point2f(corners[2].x, corners[2].y);
+  warpedCorners[3] = Point2f(corners[3].x, corners[3].y);
+  auto transform = getPerspectiveTransform(warpedCorners.data(), unwarpedCorners.data());
+  warpPerspective(matIn, matOut, transform, unwarpedSize);
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,15 +114,17 @@ int *processImage(uchar *array, int width, int height) {
   auto bb = boundingRect(contours[indexMaxArea]);
 
   auto corners = findCorners(contours[indexMaxArea]);
+  Mat matUnwarped;
+  applyWarpPerspective(matNormalised, matUnwarped, corners);
 
   int return_image_1_width = matNormalised.cols;
   int return_image_1_height = matNormalised.rows;
   int return_image_1_channels = matNormalised.channels();
   int return_image_1_size = return_image_1_width * return_image_1_height * return_image_1_channels;
 
-  int return_image_2_width = matBinary.cols;
-  int return_image_2_height = matBinary.rows;
-  int return_image_2_channels = matBinary.channels();
+  int return_image_2_width = matUnwarped.cols;
+  int return_image_2_height = matUnwarped.rows;
+  int return_image_2_channels = matUnwarped.channels();
   int return_image_2_size = return_image_2_width * return_image_2_height * return_image_2_channels;
 
   int return_data_size = 20 * sizeof(int) + return_image_1_size + return_image_2_size;
@@ -110,7 +132,7 @@ int *processImage(uchar *array, int width, int height) {
   uchar *return_image_1_addr = reinterpret_cast<uchar*>(&return_data[20]);
   uchar *return_image_2_addr = return_image_1_addr + return_image_1_size;
   memcpy(return_image_1_addr, matNormalised.data, return_image_1_size);
-  memcpy(return_image_2_addr, matBinary.data, return_image_2_size);
+  memcpy(return_image_2_addr, matUnwarped.data, return_image_2_size);
 
   return_data[0] = bb.x;
   return_data[1] = bb.y;
