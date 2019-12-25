@@ -10,10 +10,14 @@
 using namespace std;
 using namespace cv;
 
-int distance(const Point &p1, const Point& p2) {
+int distanceSquared(const Point &p1, const Point& p2) {
   auto dx = p1.x - p2.x;
   auto dy = p1.y - p2.y;
-  return sqrt(dx * dx + dy * dy);
+  return dx * dx + dy * dy;
+}
+
+int distance(const Point &p1, const Point& p2) {
+  return sqrt(distanceSquared(p1, p2));
 }
 
 int findQuadrant(const Point &centre, const Point &p) {
@@ -35,7 +39,7 @@ vector<Point> findCorners(const vector<Point> &contour) {
     [&](const Point &p){
       auto q = findQuadrant(centre, p);
       if (q >= 0) {
-        auto d = distance(centre, p);
+        auto d = distanceSquared(centre, p);
         if (d > maxDistances[q]) {
           maxDistances[q] = d;
           corners[q] = p;

@@ -22,30 +22,35 @@
       </div>
     </div>
     <div class="row">
-      <div class="col-md-6 col-xs-12">
+      <div class="col-md-6">
         <div class="image-wrapper">
           <canvas id="input-image"></canvas>
           <canvas id="input-image-overlay" class="image-overlay"></canvas>
         </div>
       </div>
-      <div class="col-md-6 col-xs-12">
+      <div class="col-md-3">
         <div class="image-wrapper">
-          <canvas id="output-image"></canvas>
-          <canvas id="output-image-overlay" class="image-overlay"></canvas>
+          <canvas id="output-image-1"></canvas>
+          <canvas id="output-image-1-overlay" class="image-overlay"></canvas>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="image-wrapper">
+          <canvas id="output-image-2"></canvas>
+          <canvas id="output-image-2-overlay" class="image-overlay"></canvas>
         </div>
       </div>
     </div>
     <div class="row row-gap">
-      <div class="col-md-12">
-        <select id="input-images"></select>
-        <button id="process-image-btn" class="btn btn-xs btn-primary">Process Image</button>
-      </div>
-    </div>
-    <div class="row row-gap">
       <div class="col-md-6">
-        <div id="cells"></div>
+          <select id="input-image-selector"></select>
+          <button id="process-image-btn" class="btn btn-xs btn-primary">Process Image</button>
+        </div>
+      <div class="col-md-3">
+        <div id="cells-1"></div>
       </div>
-      <div class="col-md-offset-6 col-md-6">
+      <div class="col-md-3">
+        <div id="cells-2"></div>
       </div>
     </div>
   </div>

@@ -41,14 +41,14 @@ const imageDataFrom4Channels = (data, width, height) => {
   return imageData
 }
 
-const drawOutputImage = imageData => {
+const drawOutputImage = (imageData, canvasId) => {
   console.log('[drawOutputImage]')
-  const canvas = document.getElementById('output-image')
+  const canvas = document.getElementById(canvasId)
   canvas.width = imageData.width
   canvas.height = imageData.height
   const ctx = canvas.getContext('2d')
   ctx.putImageData(imageData, 0, 0)
-  const outputImageOverlay = document.getElementById('output-image-overlay')
+  const outputImageOverlay = document.getElementById(`${canvasId}-overlay`)
   outputImageOverlay.width = imageData.width
   outputImageOverlay.height = imageData.height
 }
@@ -77,13 +77,13 @@ const drawCorners = (corners, canvasId) => {
   ctx.stroke(path)
 }
 
-const cropCells = (imageData, boundingBox) => {
+const cropCells = (canvasId, cellsId, boundingBox) => {
   console.log('[cropCells]')
 
-  const canvas = document.getElementById('output-image')
+  const canvas = document.getElementById(canvasId)
   const ctx = canvas.getContext('2d')
 
-  const cellsElement = document.getElementById('cells')
+  const cellsElement = document.getElementById(cellsId)
 
   const [bbx, bby, bbw, bbh] = inset(...boundingBox, 2, 2)
   const cellw = bbw / 9
@@ -111,19 +111,25 @@ const clearCanvas = canvasId => {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 }
 
-const reset = () => {
-  clearCanvas('output-image')
-  clearCanvas('output-image-overlay')
-  const cellsElement = document.getElementById('cells')
-  while (cellsElement.firstChild) {
-    cellsElement.removeChild(cellsElement.firstChild)
+const deleteChildren = parent => {
+  while (parent.firstChild) {
+    parent.removeChild(parent.firstChild)
   }
+}
+
+const reset = () => {
+  clearCanvas('output-image-1')
+  clearCanvas('output-image-1-overlay')
+  const cells1Element = document.getElementById('cells-1')
+  const cells2Element = document.getElementById('cells-2')
+  deleteChildren(cells1Element)
+  deleteChildren(cells2Element)
 }
 
 const loadInputImage = async index => {
   console.log('[loadInputImage]')
-  const inputImagesElement = document.getElementById('input-images')
-  const imageUrl = inputImagesElement.options[index].value
+  const inputImageSelector = document.getElementById('input-image-selector')
+  const imageUrl = inputImageSelector.options[index].value
   const image = new Image()
   await new Promise(resolve => {
     image.onload = resolve
@@ -140,8 +146,8 @@ const loadInputImage = async index => {
   reset()
 }
 
-const onChangeSudoku = e => {
-  console.log('[onChangeSudoku]')
+const onSelectImageSudoku = e => {
+  console.log('[onSelectImageSudoku]')
   loadInputImage(e.target.selectedIndex)
 }
 
@@ -158,28 +164,32 @@ const onProcessImage = (module, processImage) => () => {
     outImage2Width, outImage2Height, outImage2Channels, outImage2Addr
   ] = returnData
   const boundingBox = [bbx, bby, bbw, bbh]
-  console.log(JSON.stringify(boundingBox))
-  console.log(JSON.stringify([outImage1Width, outImage1Height, outImage1Channels, outImage1Addr]))
-  console.log(JSON.stringify([outImage2Width, outImage2Height, outImage2Channels, outImage2Addr]))
   const corners = range(4).map(cornerIndex => ({
     x: returnData[12 + cornerIndex * 2],
     y: returnData[12 + cornerIndex * 2 + 1]
   }))
-  console.dir(corners)
+
   const outImage1DataSize = outImage1Width * outImage1Height * outImage1Channels
   const outImage1Data = module.HEAPU8.slice(outImage1Addr, outImage1Addr + outImage1DataSize)
   const imageData1 = outImage1Channels === 1
     ? imageDataFrom1Channel(outImage1Data, outImage1Width, outImage1Height)
     : imageDataFrom4Channels(outImage1Data, outImage1Width, outImage1Height)
-  // const outImage2DataSize = outImage2Width * outImage2Height * outImage2Channels
-  // const outImage2Data = module.HEAPU8.slice(outImage2Addr, outImage2Addr + outImage2DataSize)
-  // const imageData2 = outImage2Channels === 1
-  //   ? imageDataFrom1Channel(outImage2Data, outImage2Width, outImage2Height)
-  //   : imageDataFrom4Channels(outImage2Data, outImage2Width, outImage2Height)
-  drawOutputImage(imageData1)
-  drawBoundingBox(boundingBox, 'output-image-overlay')
-  drawCorners(corners, 'output-image-overlay')
-  cropCells(imageData1, boundingBox)
+  drawOutputImage(imageData1, 'output-image-1')
+  drawBoundingBox(boundingBox, 'output-image-1-overlay')
+  drawCorners(corners, 'output-image-1-overlay')
+
+  const outImage2DataSize = outImage2Width * outImage2Height * outImage2Channels
+  const outImage2Data = module.HEAPU8.slice(outImage2Addr, outImage2Addr + outImage2DataSize)
+  const imageData2 = outImage2Channels === 1
+    ? imageDataFrom1Channel(outImage2Data, outImage2Width, outImage2Height)
+    : imageDataFrom4Channels(outImage2Data, outImage2Width, outImage2Height)
+  drawOutputImage(imageData2, 'output-image-2')
+  drawBoundingBox(boundingBox, 'output-image-2-overlay')
+  drawCorners(corners, 'output-image-2-overlay')
+
+  cropCells('output-image-1', 'cells-1', boundingBox)
+  cropCells('output-image-2', 'cells-2', boundingBox)
+
   module._free(addr)
 }
 
@@ -194,7 +204,7 @@ const wrapProcessImage = module => {
 
 const init = module => {
   console.log('[init]')
-  const inputImagesElement = document.getElementById('input-images')
+  const inputImageSelector = document.getElementById('input-image-selector')
   range(2).forEach(index => {
     const sudokuNumber = index + 1
     const value = `/images/sudoku-${sudokuNumber}.png`
@@ -202,9 +212,9 @@ const init = module => {
     const optionElement = document.createElement('option')
     optionElement.setAttribute('value', value)
     optionElement.innerText = label
-    inputImagesElement.appendChild(optionElement)
+    inputImageSelector.appendChild(optionElement)
   })
-  inputImagesElement.addEventListener('change', onChangeSudoku)
+  inputImageSelector.addEventListener('change', onSelectImageSudoku)
   loadInputImage(0)
   const processImage = wrapProcessImage(module)
   const processImageBtn = document.getElementById('process-image-btn')
