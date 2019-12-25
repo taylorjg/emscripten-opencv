@@ -66,7 +66,7 @@ describe('tests', () => {
     }
   })
 
-  const expectAlmost = (actual, expected) => {
+  const expectWithinTolerance = (actual, expected) => {
     const TOLERANCE = 1
     const lowerBound = expected - TOLERANCE
     const upperBound = expected + TOLERANCE
@@ -88,13 +88,13 @@ describe('tests', () => {
 
     const [bbx, bby, bbw, bbh, imgw, imgh, imgd] = returnData
 
-    expectAlmost(bbx, 29)
-    expectAlmost(bby, 43)
-    expectAlmost(bbw, 266)
-    expectAlmost(bbh, 267)
+    expectWithinTolerance(bbx, 20)
+    expectWithinTolerance(bby, 30)
+    expectWithinTolerance(bbw, 185)
+    expectWithinTolerance(bbh, 185)
 
-    expect(imgw).to.equal(324)
-    expect(imgh).to.equal(324)
+    expect(imgw).to.equal(224)
+    expect(imgh).to.equal(224)
     expect(imgd).to.equal(1)
 
     helloModule._free(addr)
