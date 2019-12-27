@@ -125,6 +125,8 @@ const reset = () => {
   clearCanvas('output-image-2-overlay')
   deleteChildren('cells-1')
   deleteChildren('cells-2')
+  const elapsedTimeRow = document.getElementById('elapsed-time-row')
+  elapsedTimeRow.style.display = 'none';
 }
 
 const loadInputImage = async index => {
@@ -156,7 +158,13 @@ const onProcessImage = (module, processImage) => () => {
   console.log('[onProcessImage]')
   reset()
   const { data, width, height } = getImageData()
+  const startTime = performance.now()
   const addr = processImage(data, width, height)
+  const endTime = performance.now()
+  const elapsedTimeRow = document.getElementById('elapsed-time-row')
+  elapsedTimeRow.style.display = 'block';
+  const elapsedTime = document.getElementById('elapsed-time')
+  elapsedTime.innerText = (endTime - startTime).toFixed(2)
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
   const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 20)
   const [
