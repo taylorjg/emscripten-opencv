@@ -5,25 +5,26 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const path = require('path')
 const { version } = require('./package.json')
 
-const distFolder = path.join(__dirname, 'dist')
+const DIST_FOLDER = path.join(__dirname, 'dist')
 
 module.exports = {
   mode: 'production',
   entry: './src/index.js',
   output: {
-    path: distFolder,
+    path: DIST_FOLDER,
     filename: 'bundle.js',
   },
   plugins: [
-    new CopyWebpackPlugin([
-      { context: './src', from: '*.html' },
-      { context: './src', from: '*.css' },
-      { context: './src', from: 'images/*.png' },
-      { context: './build', from: 'hello.js' },
-      { context: './build', from: 'hello.wasm' },
-      { context: './test', from: 'tests.html' },
-      { context: './test', from: 'tests.js' }
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [
+        { context: './src', from: '*.css' },
+        { context: './src', from: 'images/*.png' },
+        { context: './build', from: 'hello.js' },
+        { context: './build', from: 'hello.wasm' },
+        { context: './test', from: 'tests.html' },
+        { context: './test', from: 'tests.js' }
+      ]
+    }),
     new HtmlWebpackPlugin({
       template: './src/index.html',
       inject: false,
@@ -32,6 +33,6 @@ module.exports = {
   ],
   devtool: 'source-map',
   devServer: {
-    contentBase: distFolder
+    contentBase: DIST_FOLDER
   }
 }
