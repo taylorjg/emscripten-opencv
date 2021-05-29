@@ -4,27 +4,27 @@
   "description": "Web app calling into C++ WebAssembly code that uses OpenCV",
   "scripts": {
     "eslint": "eslint .",
-    "build:opencv": "docker run --rm -t -w /src -v \"$PWD\"/../opencv:/src/opencv trzeci/emscripten:1.39.4 python3 opencv/platforms/js/build_js.py opencv/build_wasm --build_wasm",
-    "build:wasm": "docker run --rm -t -w /src -v \"$PWD\"/../opencv:/src/opencv -v \"$PWD\":/src/emscripten-opencv trzeci/emscripten:1.39.4 emscripten-opencv/build-wasm.sh",
+    "build:opencv": "docker run --rm -t -w /src -v \"$PWD\"/../opencv:/src/opencv emscripten/emsdk sh -c 'EMSCRIPTEN=/emsdk/upstream/emscripten python3 opencv/platforms/js/build_js.py opencv/build_wasm --build_wasm'",
+    "build:wasm": "docker run --rm -t -w /src -v \"$PWD\"/../opencv:/src/opencv -v \"$PWD\":/src/emscripten-opencv emscripten/emsdk sh emscripten-opencv/build-wasm.sh",
     "build": "npm run build:wasm && webpack",
     "start": "node server",
     "start:dev": "npm run build:wasm && webpack-dev-server",
     "heroku-postbuild": "echo use contents of dist folder",
-    "test": "mocha --no-warnings"
+    "test": "mocha --experimental-wasm-threads --no-warnings"
   },
   "dependencies": {
     "express": "^4.17.1"
   },
   "devDependencies": {
-    "canvas": "^2.6.1",
-    "chai": "^4.2.0",
+    "canvas": "^2.8.0",
+    "chai": "^4.3.4",
     "chai-almost": "^1.0.1",
-    "copy-webpack-plugin": "^5.1.1",
-    "eslint": "^6.7.2",
+    "copy-webpack-plugin": "^5.1.2",
+    "eslint": "^6.8.0",
     "html-webpack-plugin": "^3.2.0",
-    "mocha": "^6.2.2",
-    "webpack": "^4.41.3",
-    "webpack-cli": "^3.3.10",
-    "webpack-dev-server": "^3.9.0"
+    "mocha": "^6.2.3",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.2"
   }
 }

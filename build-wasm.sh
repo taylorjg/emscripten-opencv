@@ -7,6 +7,6 @@ echo BUILD_DIR=$BUILD_DIR
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-emconfigure cmake "$SCRIPT_DIR"
+emcmake cmake "$SCRIPT_DIR"
 emmake make clean
 emmake make
