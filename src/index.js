@@ -159,17 +159,25 @@ const onProcessImage = (module, processImage) => () => {
   const elapsedTime = document.getElementById('elapsed-time')
   elapsedTime.innerText = (endTime - startTime).toFixed(2)
   const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
-  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 20)
+  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 22)
   const [
     bbx, bby, bbw, bbh,
     outImage1Width, outImage1Height, outImage1Channels, outImage1Addr,
-    outImage2Width, outImage2Height, outImage2Channels, outImage2Addr
+    outImage2Width, outImage2Height, outImage2Channels, outImage2Addr,
+    , , , , , , , , // corners
+    numContourPoints, contourAddr
   ] = returnData
   const boundingBox1 = [bbx, bby, bbw, bbh]
   const corners = range(4).map(cornerIndex => ({
     x: returnData[12 + cornerIndex * 2],
     y: returnData[12 + cornerIndex * 2 + 1]
   }))
+
+  console.log('numContourPoints:', numContourPoints)
+  console.log('contourAddr:', contourAddr)
+  const contourAddr32 = contourAddr / module.HEAP32.BYTES_PER_ELEMENT
+  const contourPointsData = module.HEAP32.slice(contourAddr32, contourAddr32 + numContourPoints)
+  console.dir(contourPointsData)
 
   const outImage1DataSize = outImage1Width * outImage1Height * outImage1Channels
   const outImage1Data = module.HEAPU8.slice(outImage1Addr, outImage1Addr + outImage1DataSize)

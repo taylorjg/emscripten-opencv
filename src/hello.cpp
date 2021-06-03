@@ -103,7 +103,7 @@ int *processImage(uchar *array, int width, int height) {
   findContours(matBinary, contours, hierarchy, mode, method);
 
   if (contours.empty()) {
-    return 0;
+    return nullptr;
   }
 
   auto areas = vector<double>(contours.size());
@@ -115,9 +115,10 @@ int *processImage(uchar *array, int width, int height) {
 
   auto itMaxArea = max_element(areas.cbegin(), areas.cend());
   auto indexMaxArea = distance(areas.cbegin(), itMaxArea);
-  auto bb = boundingRect(contours[indexMaxArea]);
+  auto contour = contours[indexMaxArea]; // vector<Point>
+  auto bb = boundingRect(contour);
 
-  auto corners = findCorners(contours[indexMaxArea]);
+  auto corners = findCorners(contour);
   Mat matUnwarped;
   applyWarpPerspective(matNormalised, matUnwarped, corners);
 
@@ -131,12 +132,21 @@ int *processImage(uchar *array, int width, int height) {
   int return_image_2_channels = matUnwarped.channels();
   int return_image_2_size = return_image_2_width * return_image_2_height * return_image_2_channels;
 
-  int return_data_size = 20 * sizeof(int) + return_image_1_size + return_image_2_size;
-  int *return_data = reinterpret_cast<int*>(malloc(return_data_size));
-  uchar *return_image_1_addr = reinterpret_cast<uchar*>(&return_data[20]);
+  int numContourPoints = contour.size();
+  int return_contour_size = numContourPoints * 2 * sizeof(int);
+
+  int return_data_size = 22 * sizeof(int) + return_image_1_size + return_image_2_size + return_contour_size;
+  int *return_data = static_cast<int*>(malloc(return_data_size));
+  uchar *return_image_1_addr = reinterpret_cast<uchar*>(&return_data[22]);
   uchar *return_image_2_addr = return_image_1_addr + return_image_1_size;
+  int *return_contour_addr = reinterpret_cast<int*>(return_image_2_addr + return_image_2_size);
   memcpy(return_image_1_addr, matNormalised.data, return_image_1_size);
   memcpy(return_image_2_addr, matUnwarped.data, return_image_2_size);
+
+  for (auto i = 0; i < numContourPoints; i++) {
+    return_contour_addr[i * 2] = contour[i].x;
+    return_contour_addr[i * 2 + 1] = contour[i].y;
+  }
 
   return_data[0] = bb.x;
   return_data[1] = bb.y;
@@ -158,6 +168,9 @@ int *processImage(uchar *array, int width, int height) {
   return_data[17] = corners[2].y;
   return_data[18] = corners[3].x;
   return_data[19] = corners[3].y;
+  return_data[20] = numContourPoints;
+  return_data[21] = reinterpret_cast<int>(return_contour_addr);
+
   return return_data;
 }
 
