@@ -10,12 +10,10 @@ if (IS_NODE) {
 } else {
   expect = chai.expect
   mocha.setup('bdd')
-  window.Module = {
-    onRuntimeInitialized: () => {
-      helloModule = window.Module
-      mocha.run()
-    }
-  }
+  window.createHelloModule().then(module => {
+    helloModule = module
+    mocha.run()
+  })
 }
 
 const getImageDataNode = async () => {
@@ -57,6 +55,8 @@ describe('tests', () => {
   before(() => {
     if (IS_NODE) {
       return new Promise(resolve => {
+        // This will need changing since adding these flags:
+        // -s MODULARIZE=1 -s EXPORT_NAME=createHelloModule
         const Module = require('../build/hello.js')
         Module.onRuntimeInitialized = () => {
           helloModule = Module

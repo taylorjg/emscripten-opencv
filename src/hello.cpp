@@ -102,6 +102,10 @@ int *processImage(uchar *array, int width, int height) {
   auto method = CHAIN_APPROX_SIMPLE;
   findContours(matBinary, contours, hierarchy, mode, method);
 
+  if (contours.empty()) {
+    return 0;
+  }
+
   auto areas = vector<double>(contours.size());
   transform(
     contours.cbegin(),

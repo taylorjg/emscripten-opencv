@@ -1,10 +1,3 @@
-window.Module = {
-  onRuntimeInitialized: () => {
-    console.log('[onRuntimeInitialized]')
-    init(Module) // eslint-disable-line no-undef
-  }
-}
-
 const range = n =>
   Array.from(Array(n).keys())
 
@@ -228,3 +221,9 @@ const init = module => {
   const processImageBtn = document.getElementById('process-image-btn')
   processImageBtn.addEventListener('click', onProcessImage(module, processImage))
 }
+
+const main = async () => {
+  window.createHelloModule().then(init)
+}
+
+main()
