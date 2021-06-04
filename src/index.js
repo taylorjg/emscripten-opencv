@@ -1,3 +1,5 @@
+/* global R */
+
 const range = n =>
   Array.from(Array(n).keys())
 
@@ -50,24 +52,31 @@ const drawBoundingBox = (boundingBox, canvasId) => {
   console.log('[drawBoundingBox]')
   const canvas = document.getElementById(canvasId)
   const ctx = canvas.getContext('2d')
-  ctx.strokeStyle = 'red'
+  ctx.strokeStyle = 'blue'
   ctx.lineWidth = 1
   ctx.strokeRect(...inset(...boundingBox, 2, 2))
 }
 
-const drawCorners = (corners, canvasId) => {
-  console.log('[drawCorners]')
+const drawPoints = (points, canvasId, colour) => {
+  console.log('[drawPoints]')
   const canvas = document.getElementById(canvasId)
   const ctx = canvas.getContext('2d')
-  ctx.strokeStyle = 'magenta'
+  ctx.strokeStyle = colour
   ctx.lineWidth = 1
   const path = new Path2D()
-  path.moveTo(corners[0].x, corners[0].y)
-  corners.slice(1).forEach(corner => {
-    path.lineTo(corner.x, corner.y)
-  })
+  points.forEach(({ x, y }, index) => index === 0 ? path.moveTo(x, y) : path.lineTo(x, y))
   path.closePath()
   ctx.stroke(path)
+}
+
+const drawCorners = (corners, canvasId) => {
+  console.log('[drawCorners]')
+  drawPoints(corners, canvasId, 'magenta')
+}
+
+export const drawContour = (points, canvasId) => {
+  console.log('[drawContour]')
+  drawPoints(points, canvasId, 'red')
 }
 
 const cropCells = (canvasId, cellsId, boundingBox) => {
@@ -147,59 +156,64 @@ const onSelectImageSudoku = e => {
   loadInputImage(e.target.selectedIndex)
 }
 
+const unpackImage = (module, [width, height, channels, addr]) => {
+  const cb = width * height * channels
+  const data = module.HEAPU8.slice(addr, addr + cb)
+  return channels === 1
+    ? imageDataFrom1Channel(data, width, height)
+    : imageDataFrom4Channels(data, width, height)
+}
+
+const unpackCorners = data32 => {
+  return R.splitEvery(2, data32).map(([x, y]) => ({ x, y }))
+}
+
+const unpackContour = (module, [numPoints, addr]) => {
+  const addr32 = addr / module.HEAP32.BYTES_PER_ELEMENT
+  const data32 = module.HEAP32.slice(addr32, addr32 + numPoints * 2)
+  return R.splitEvery(2, data32).map(([x, y]) => ({ x, y }))
+}
+
+const unpackProcessImageResult = (module, addr) => {
+  const NUM_INT_FIELDS = 22
+  const addr32 = addr / module.HEAP32.BYTES_PER_ELEMENT
+  const data32 = module.HEAP32.slice(addr32, addr32 + NUM_INT_FIELDS)
+  const boundingBox = data32.slice(0, 4)
+  const image1 = unpackImage(module, data32.slice(4, 8))
+  const image2 = unpackImage(module, data32.slice(8, 12))
+  const corners = unpackCorners(data32.slice(12, 20))
+  const contour = unpackContour(module, data32.slice(20, 22))
+  return { boundingBox, image1, image2, corners, contour }
+}
+
 const onProcessImage = (module, processImage) => () => {
   console.log('[onProcessImage]')
   reset()
   const { data, width, height } = getImageData()
+
   const startTime = performance.now()
   const addr = processImage(data, width, height)
   const endTime = performance.now()
+
   const elapsedTimeRow = document.getElementById('elapsed-time-row')
   elapsedTimeRow.style.display = 'block';
   const elapsedTime = document.getElementById('elapsed-time')
   elapsedTime.innerText = (endTime - startTime).toFixed(2)
-  const returnDataAddr = addr / module.HEAP32.BYTES_PER_ELEMENT
-  const returnData = module.HEAP32.slice(returnDataAddr, returnDataAddr + 22)
-  const [
-    bbx, bby, bbw, bbh,
-    outImage1Width, outImage1Height, outImage1Channels, outImage1Addr,
-    outImage2Width, outImage2Height, outImage2Channels, outImage2Addr,
-    , , , , , , , , // corners
-    numContourPoints, contourAddr
-  ] = returnData
-  const boundingBox1 = [bbx, bby, bbw, bbh]
-  const corners = range(4).map(cornerIndex => ({
-    x: returnData[12 + cornerIndex * 2],
-    y: returnData[12 + cornerIndex * 2 + 1]
-  }))
 
-  console.log('numContourPoints:', numContourPoints)
-  console.log('contourAddr:', contourAddr)
-  const contourAddr32 = contourAddr / module.HEAP32.BYTES_PER_ELEMENT
-  const contourPointsData = module.HEAP32.slice(contourAddr32, contourAddr32 + numContourPoints)
-  console.dir(contourPointsData)
+  const unpackedResult = unpackProcessImageResult(module, addr)
+  module._free(addr)
 
-  const outImage1DataSize = outImage1Width * outImage1Height * outImage1Channels
-  const outImage1Data = module.HEAPU8.slice(outImage1Addr, outImage1Addr + outImage1DataSize)
-  const imageData1 = outImage1Channels === 1
-    ? imageDataFrom1Channel(outImage1Data, outImage1Width, outImage1Height)
-    : imageDataFrom4Channels(outImage1Data, outImage1Width, outImage1Height)
-  drawOutputImage(imageData1, 'output-image-1')
-  drawBoundingBox(boundingBox1, 'output-image-1-overlay')
-  drawCorners(corners, 'output-image-1-overlay')
+  drawOutputImage(unpackedResult.image1, 'output-image-1')
+  drawOutputImage(unpackedResult.image2, 'output-image-2')
+  drawBoundingBox(unpackedResult.boundingBox, 'output-image-1-overlay')
+  drawCorners(unpackedResult.corners, 'output-image-1-overlay')
+  drawContour(unpackedResult.contour, 'output-image-1-overlay')
 
-  const outImage2DataSize = outImage2Width * outImage2Height * outImage2Channels
-  const outImage2Data = module.HEAPU8.slice(outImage2Addr, outImage2Addr + outImage2DataSize)
-  const imageData2 = outImage2Channels === 1
-    ? imageDataFrom1Channel(outImage2Data, outImage2Width, outImage2Height)
-    : imageDataFrom4Channels(outImage2Data, outImage2Width, outImage2Height)
-  drawOutputImage(imageData2, 'output-image-2')
-  const boundingBox2 = [0, 0, imageData2.width, imageData2.height]
+  const boundingBox1 = unpackedResult.boundingBox
+  const boundingBox2 = [0, 0, unpackedResult.image2.width, unpackedResult.image2.height]
 
   cropCells('output-image-1', 'cells-1', boundingBox1)
   cropCells('output-image-2', 'cells-2', boundingBox2)
-
-  module._free(addr)
 }
 
 const wrapProcessImage = module => {
