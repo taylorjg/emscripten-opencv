@@ -1,28 +1,30 @@
 let expect
-let npmcanvas
+let nodeCanvas
 let helloModule
 
 const IS_NODE = typeof process === 'object' && typeof require === 'function'
 
-if (IS_NODE) {
-  expect = require('chai').expect
-  npmcanvas = require('canvas')
-} else {
-  expect = chai.expect
-  mocha.setup('bdd')
-  window.createHelloModule().then(module => {
-    helloModule = module
+const main = async () => {
+  if (IS_NODE) {
+    expect = require('chai').expect
+    nodeCanvas = require('canvas')
+  } else {
+    expect = chai.expect
+    mocha.setup('bdd')
+    helloModule = await window.createHelloModule()
     mocha.run()
-  })
+  }
 }
+
+main()
 
 const getImageDataNode = async () => {
   const fs = require('fs').promises
   const png = await fs.readFile('src/images/sudoku-1.png')
   return new Promise(resolve => {
-    const img = new npmcanvas.Image()
+    const img = new nodeCanvas.Image()
     img.onload = () => {
-      const canvas = npmcanvas.createCanvas(img.width, img.height)
+      const canvas = nodeCanvas.createCanvas(img.width, img.height)
       const ctx = canvas.getContext('2d')
       ctx.drawImage(img, 0, 0)
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -52,17 +54,10 @@ const getImageData = () =>
 
 describe('tests', () => {
 
-  before(() => {
+  before(async () => {
     if (IS_NODE) {
-      return new Promise(resolve => {
-        // This will need changing since adding these flags:
-        // -s MODULARIZE=1 -s EXPORT_NAME=createHelloModule
-        const Module = require('../build/hello.js')
-        Module.onRuntimeInitialized = () => {
-          helloModule = Module
-          resolve()
-        }
-      })
+      const createHelloModule = require('../build/hello.js')
+      helloModule = await createHelloModule()
     }
   })
 
@@ -82,21 +77,25 @@ describe('tests', () => {
 
     const imageData = await getImageData()
     const { data, width, height } = imageData
+
     const addr = processImage(data, width, height)
-    const returnDataAddr = addr / helloModule.HEAP32.BYTES_PER_ELEMENT
-    const returnData = helloModule.HEAP32.slice(returnDataAddr, returnDataAddr + 8)
 
-    const [bbx, bby, bbw, bbh, imgw, imgh, imgd] = returnData
+    try {
+      const addr32 = addr / helloModule.HEAP32.BYTES_PER_ELEMENT
+      const data32 = helloModule.HEAP32.slice(addr32, addr32 + 22)
 
-    expectWithinTolerance(bbx, 20)
-    expectWithinTolerance(bby, 30)
-    expectWithinTolerance(bbw, 185)
-    expectWithinTolerance(bbh, 185)
+      const [bbx, bby, bbw, bbh, imgw, imgh, imgd] = data32
 
-    expect(imgw).to.equal(224)
-    expect(imgh).to.equal(224)
-    expect(imgd).to.equal(1)
+      expectWithinTolerance(bbx, 20)
+      expectWithinTolerance(bby, 30)
+      expectWithinTolerance(bbw, 185)
+      expectWithinTolerance(bbh, 185)
 
-    helloModule._free(addr)
+      expect(imgw).to.equal(224)
+      expect(imgh).to.equal(224)
+      expect(imgd).to.equal(1)
+    } finally {
+      helloModule._free(addr)
+    }
   })
 })
